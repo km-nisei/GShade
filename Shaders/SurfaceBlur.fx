@@ -44,28 +44,28 @@ uniform int HorizontalResolution
 <
 	ui_type = "grab";
 	ui_min = 1; ui_max = BUFFER_WIDTH;
-	ui_tooltip = "Game's internal horizontal resolution. Default is for 480 content, use BUFFER_WIDTH to match your monitor's resolution.";
+	ui_tooltip = "Set your game's internal horizontal resolution. Default is for 480 content, use BUFFER_WIDTH to match your monitor's native resolution.";
 > = 640;
 
-uniform float HorizontalCorrection
+uniform float HorizontalCorrection //Should cover all cases from most common to most niche, based on current display standards.
 <
 	ui_type = "slider";
-	ui_min = 1.000; ui_max = 2.400;
-	ui_tooltip = "Adjusts the horizontal for mismatched screen ratios (e.g. 1.333 is a 4:3 game on a 16:9 monitor). Mostly just for emulators, but may be required on older PC games that don't support widescreen.";
+	ui_min = 1.000; ui_max = 5.760;
+	ui_tooltip = "Adjusts the horizontal for mismatched aspect ratios. Divide larger resolution by smaller resolution in order to set this if needed. (e.g. (16/9)/(4/3)=1.333)";
 > = 1.000;
 
 uniform int VerticalResolution
 <
 	ui_type = "grab";
 	ui_min = 1; ui_max = BUFFER_HEIGHT;
-	ui_tooltip = "Same as HorizontalResolution, but for vertical resolution.";
+	ui_tooltip = "Same as HorizontalResolution, but for vertical resolution. Use BUFFER_HEIGHT to match your monitor's native resolution.";
 > = 480;
 
-uniform float VerticalCorrection
+uniform float VerticalCorrection //Same as above.
 <
 	ui_type = "slider";
-	ui_min = 1.000; ui_max = 2.400;
-	ui_tooltip = "Same as HorizontalCorrection, only for the vertical instead. Use for portrait mode screens only.";
+	ui_min = 1.000; ui_max = 5.760;
+	ui_tooltip = "Same as HorizontalCorrection, only for the vertical instead. Used for portrait mode games on landscape screens or vice versa. (e.g. (4/3)/(9/16)=2.370)";
 > = 1.000;
 
 uniform int DebugMode
