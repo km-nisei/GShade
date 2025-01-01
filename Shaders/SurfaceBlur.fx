@@ -51,7 +51,7 @@ uniform float HorizontalCorrection //Should cover all cases from most common to 
 <
 	ui_type = "slider";
 	ui_min = 1.000; ui_max = 5.760;
-	ui_tooltip = "Adjusts the horizontal for mismatched aspect ratios if screen is wider than fullscreen game. Divide divide screen aspect ratio by game aspect ratio. (e.g. (16/9)/(4/3)=1.333)";
+	ui_tooltip = "Adjusts the horizontal for mismatched aspect ratios if screen is wider than fullscreen game. Always divide larger aspect ratio by smaller aspect ratio. (e.g. (16/9)/(4/3)=1.333)";
 > = 1.000;
 
 uniform int VerticalResolution
@@ -65,7 +65,7 @@ uniform float VerticalCorrection //Same as above.
 <
 	ui_type = "slider";
 	ui_min = 1.000; ui_max = 5.760;
-	ui_tooltip = "Same as HorizontalCorrection, except if screen is taller than fullscreen game instead. Divide game aspect ratio by screen aspect ratio in this case. (e.g. (4/3)/(9/16)=2.370)";
+	ui_tooltip = "Same as HorizontalCorrection, except if screen is taller than fullscreen game instead. Always divide larger aspect ratio by smaller aspect ratio. (e.g. (4/3)/(9/16)=2.370)";
 > = 1.000;
 
 uniform int DebugMode
