@@ -2,18 +2,21 @@
 //Surface Blur by Ioxa
 //Version 1.1 for ReShade 3.0
 //Based on the  filter by mrharicot at https://www.shadertoy.com/view/4dfGDH
-// Lightly optimized by Marot Satil for the GShade project.
+//Lightly optimized by Marot Satil for the GShade project.
+//Smart Blur implementation by KM Nisei. (Now works a lot better with older 240i/p games to eliminate dithering without overcorrecting.)
 
 //Settings
-#if !defined SurfaceBlurIterations
+#ifndef SurfaceBlurIterations
 	#define SurfaceBlurIterations 1
 #endif
+
+#include "ReShadeUI.fxh"
 
 uniform int BlurRadius
 <
 	ui_type = "slider";
 	ui_min = 1; ui_max = 4;
-	ui_tooltip = "1 = 3x3 mask, 2 = 5x5 mask, 3 = 7x7 mask, 4 = 9x9 mask. For more blurring add SurfaceBlurIterations=2 or SurfaceBlurIterations=3 to Preprocessor Definitions";
+	ui_tooltip = "1 = 3x3 mask, 2 = 5x5 mask, 3 = 7x7 mask, 4 = 9x9 mask. For more blurring, change SurfaceBlurIterations to 2 or 3 in Preprocessor Definitions below.";
 > = 1;
 
 uniform float BlurOffset
@@ -27,15 +30,43 @@ uniform float BlurEdge
 <
 	ui_type = "slider";
 	ui_min = 0.000; ui_max = 10.000;
-	ui_tooltip = "Adjusts the strength of edge detection. Lower values will exclude finer edges from blurring";
-> = 0.500;
+	ui_tooltip = "Adjusts the strength of edge detection. Lower values will exclude finer edges from blurring.";
+> = 0.050;
 
 uniform float BlurStrength
 <
 	ui_type = "slider";
 	ui_min = 0.00; ui_max = 1.00;
-	ui_tooltip = "Adjusts the strength of the effect";
+	ui_tooltip = "Adjusts the strength of the effect.";
 > = 1.00;
+
+uniform int HorizontalResolution
+<
+	ui_type = "grab";
+	ui_min = 1; ui_max = BUFFER_WIDTH;
+	ui_tooltip = "Game's internal horizontal resolution. Default is for 480 content, use BUFFER_WIDTH to match your monitor's resolution.";
+> = 640;
+
+uniform float HorizontalCorrection
+<
+	ui_type = "slider";
+	ui_min = 1.000; ui_max = 2.400;
+	ui_tooltip = "Adjusts the horizontal for mismatched screen ratios (e.g. 1.333 is a 4:3 game on a 16:9 monitor). Mostly just for emulators, but may be required on older PC games that don't support widescreen.";
+> = 1.000;
+
+uniform int VerticalResolution
+<
+	ui_type = "grab";
+	ui_min = 1; ui_max = BUFFER_HEIGHT;
+	ui_tooltip = "Same as HorizontalResolution, but for vertical resolution.";
+> = 480;
+
+uniform float VerticalCorrection
+<
+	ui_type = "slider";
+	ui_min = 1.000; ui_max = 2.400;
+	ui_tooltip = "Same as HorizontalCorrection, only for the vertical instead. Use for portrait mode screens only.";
+> = 1.000;
 
 uniform int DebugMode
 <
@@ -46,23 +77,28 @@ uniform int DebugMode
 
 #include "ReShade.fxh"
 
-#define sOffset1x BUFFER_PIXEL_SIZE.x
-#define sOffset1y BUFFER_PIXEL_SIZE.y
+#define sOffsetx (BUFFER_PIXEL_SIZE.x*(BUFFER_WIDTH/HorizontalResolution)/HorizontalCorrection)
+#define sOffsety (BUFFER_PIXEL_SIZE.y*(BUFFER_HEIGHT/VerticalResolution)/VerticalCorrection)
 
-#define sOffset2x 2.0*BUFFER_PIXEL_SIZE.x
-#define sOffset2y 2.0*BUFFER_PIXEL_SIZE.y
+//#define dif int((BUFFER_WIDTH/INTERNAL_X)-(BUFFER_HEIGHT/INTERNAL_Y)) //todo: figure out how to fix this so smart blur works automatically based on user's set internal game resolution
 
-#define sOffset3ax 1.3846153846*BUFFER_PIXEL_SIZE.x
-#define sOffset3bx 3.2307692308*BUFFER_PIXEL_SIZE.x
-#define sOffset3ay 1.3846153846*BUFFER_PIXEL_SIZE.y
-#define sOffset3by 3.2307692308*BUFFER_PIXEL_SIZE.y
+#define sOffset1x sOffsetx
+#define sOffset1y sOffsety
 
-#define sOffset4ax 1.4584295168*BUFFER_PIXEL_SIZE.x
-#define sOffset4bx 3.4039848067*BUFFER_PIXEL_SIZE.x
-#define sOffset4cx 5.3518057801*BUFFER_PIXEL_SIZE.x
-#define sOffset4ay 1.4584295168*BUFFER_PIXEL_SIZE.y
-#define sOffset4by 3.4039848067*BUFFER_PIXEL_SIZE.y
-#define sOffset4cy 5.3518057801*BUFFER_PIXEL_SIZE.y
+#define sOffset2x 2.0*sOffset1x
+#define sOffset2y 2.0*sOffset1y
+
+#define sOffset3ax 1.3846153846*sOffset1x
+#define sOffset3bx 3.2307692308*sOffset1x
+#define sOffset3ay 1.3846153846*sOffset1y
+#define sOffset3by 3.2307692308*sOffset1y
+
+#define sOffset4ax 1.4584295168*sOffset1x
+#define sOffset4bx 3.4039848067*sOffset1x
+#define sOffset4cx 5.3518057801*sOffset1x
+#define sOffset4ay 1.4584295168*sOffset1y
+#define sOffset4by 3.4039848067*sOffset1y
+#define sOffset4cy 5.3518057801*sOffset1y
 	
 #if SurfaceBlurIterations >= 2
 	texture SurfaceBlurTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA8; };
@@ -543,7 +579,7 @@ float3 SurfaceBlur2(in float4 pos : SV_Position, in float2 texcoord : TEXCOORD) 
 }
 #endif
 
-technique SurfaceBlur
+technique SmartBlur
 {
 #if SurfaceBlurIterations >= 2
 	pass Blur1
